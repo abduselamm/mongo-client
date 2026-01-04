@@ -49,6 +49,7 @@ def get_api_key():
 
 MONGODB_URL = get_mongo_url()
 VALID_API_KEY = get_api_key()
+APP_ROOT_PATH = os.environ.get("APP_ROOT_PATH", "")
 
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.get_database()
