@@ -15,7 +15,7 @@ pipeline {
         FILE_PATH = "scripts/docker-compose.yml"
         DOCKER_FILE_PATH = "scripts/Dockerfile"
         ENV_FILE_PATH = "./env"
-        HARBOR_PRODJECT = "mongo-client"
+        HARBOR_PRODJECT = "cbe-superapp"
         REGISTRY_ADDRESS = credentials("REGISTRY_ADDRESS")
         REPO_ADDRESS = "https://github.com/abduselamm/mongo-client.git"
         PROJECT_ROOT_PATH = "/data/mongo-client/"
