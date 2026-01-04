@@ -2,11 +2,13 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    build:
+      context: ..
+      dockerfile: scripts/Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - MONGODB_URL=mongodb://mongo:27017/productdb
+      - MONGODB_URL=mongodb://mongo:27017/testdb
     depends_on:
       - mongo
 
