@@ -7,15 +7,18 @@ API_KEY_NAME = "X-API-KEY"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
+    # Debug logging
+    incoming_key = api_key_header if api_key_header else "MISSING"
+    # Show only first 3 chars of valid key for security
+    expected_prefix = str(VALID_API_KEY)[:3] + "..." if VALID_API_KEY else "NONE"
+    
     if VALID_API_KEY is None:
-        # If no API key is configured, allow access (for local dev dev/first run)
-        # Or you might want to raise an error. Given the user's request, 
-        # let's assume if it's set, we enforce it.
         return api_key_header
     
     if api_key_header == VALID_API_KEY:
         return api_key_header
     
+    print(f"Auth: Unauthorized access attempt. Received: '{incoming_key}', Expected: '{expected_prefix}'")
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid API Key",
