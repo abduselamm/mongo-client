@@ -149,3 +149,11 @@ async def delete_document(collection_name: str, id: str):
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
+@router.delete("/{collection_name}", response_description="Delete an entire collection", summary="Drop Collection")
+async def drop_collection(collection_name: str):
+    """
+    Drop an entire collection from the database.
+    **WARNING**: This operation is irreversible and deletes all data in the collection.
+    """
+    await db[collection_name].drop()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
