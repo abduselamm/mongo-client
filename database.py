@@ -9,7 +9,7 @@ def get_mongo_url():
     # 1. Try to get from HashiCorp Vault if configured
     vault_addr = os.environ.get("VAULT_ADDR")
     vault_token = os.environ.get("VAULT_TOKEN")
-    vault_path = os.environ.get("VAULT_SECRET_PATH")
+    vault_path = os.environ.get("VAULT_PATH")
 
     if vault_addr and vault_token and vault_path:
         try:
