@@ -71,10 +71,15 @@ def resolve_db_name(secrets):
         return secrets["MONGODB_DATABASE"]
     return os.environ.get("MONGODB_DATABASE") or os.environ.get("MONGO_DB") or "testdb"
 
+# 4. Root Path
+def resolve_root_path(secrets):
+    # Hardcoded as requested by user
+    return "/api/v1/cbesuperapp/mongo-client"
+
 MONGODB_URL = resolve_mongo_url(VAULT_SECRETS)
 VALID_API_KEY = resolve_api_key(VAULT_SECRETS)
 MONGODB_NAME = resolve_db_name(VAULT_SECRETS)
-APP_ROOT_PATH = os.environ.get("APP_ROOT_PATH", "")
+APP_ROOT_PATH = resolve_root_path(VAULT_SECRETS)
 
 client = AsyncIOMotorClient(MONGODB_URL)
 
