@@ -21,9 +21,18 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
         detail="Invalid API Key",
     )
 
+# Handle potential trailing/leading slashes for prefix
+PREFIX = APP_ROOT_PATH.rstrip("/")
+if PREFIX and not PREFIX.startswith("/"):
+    PREFIX = "/" + PREFIX
+
 app = FastAPI(
     title="Mongo Client API",
-    root_path=APP_ROOT_PATH,
+    # root_path handles proxy stripping, but for non-stripping proxies we also prefix routes
+    root_path=PREFIX, 
+    openapi_url="/openapi.json", # These are relative to root_path internally
+    docs_url="/docs",
+    redoc_url="/redoc",
     description="""
 A generic RESTful API using FastAPI and MongoDB.
 
@@ -36,12 +45,15 @@ A generic RESTful API using FastAPI and MongoDB.
     version="1.0.0"
 )
 
+# Use include_router with the prefix as well to ensure routes catch the full path
 app.include_router(
     dynamic_router, 
+    prefix="", # Routes in dynamic.py are already dynamic, prefix set at app level if needed
     tags=["dynamic"], 
     dependencies=[Depends(get_api_key)]
 )
 
+# For root path, we might need a redirect or alias if the proxy hits the full path
 @app.get("/", tags=["Root"])
 async def read_root():
-    return {"message": "Welcome to the Mongo Client API!"}
+    return {"message": "Welcome to the Mongo Client API!", "root_path": PREFIX}
