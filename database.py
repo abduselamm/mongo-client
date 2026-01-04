@@ -18,11 +18,11 @@ def get_mongo_url():
                 print(f"Vault: Authenticated successfully to {vault_addr}")
                 read_response = client.secrets.kv.v2.read_secret_version(path=vault_path)
                 secrets = read_response['data']['data']
-                if "MONGO_URI" in secrets:
-                    print(f"Vault: Reached secret path '{vault_path}' and retrieved MONGO_URI.")
-                    return secrets["MONGO_URI"]
+                if "MONGODB_URI" in secrets:
+                    print(f"Vault: Reached secret path '{vault_path}' and retrieved MONGODB_URI.")
+                    return secrets["MONGODB_URI"]
                 else:
-                    print(f"Vault: Reached secret path '{vault_path}' but 'MONGO_URI' key is missing!")
+                    print(f"Vault: Reached secret path '{vault_path}' but 'MONGODB_URI' key is missing!")
             else:
                 print(f"Vault: Authentication failed for {vault_addr}")
         except Exception as e:
