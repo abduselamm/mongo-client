@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Security, status
 from fastapi.security.api_key import APIKeyHeader
 from routes.dynamic import router as dynamic_router
-from database import VALID_API_KEY, APP_ROOT_PATH
+from database import VALID_API_KEY, APP_ROOT_PATH, MONGODB_URL
 
 API_KEY_NAME = "X-API-KEY"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
