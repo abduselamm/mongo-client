@@ -4,3 +4,4 @@ motor
 pydantic>=2.0.0
 python-dotenv
 email-validator
+hvac

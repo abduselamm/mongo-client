@@ -29,12 +29,12 @@ A generic, production-ready RESTful API built with **FastAPI** and **MongoDB** (
 
 ### Running Locally
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Configure Environment**:
-   Ensure you have a `.env` file or set the `MONGODB_URL` environment variable.
+1.    - [x] Handle Extended JSON (`$oid`, `$date`) <!-- id: 28 -->
+- [x] Vault Integration <!-- id: 29 -->
+    - [x] Add `hvac` to `requirements.txt` <!-- id: 30 -->
+    - [x] Update `database.py` to fetch secrets from Vault <!-- id: 31 -->
+    - [x] Update `README.md` <!-- id: 32 -->
+environment variable.
    ```bash
    export MONGODB_URL="mongodb://localhost:27017/testdb"
    ```
@@ -42,6 +42,27 @@ A generic, production-ready RESTful API built with **FastAPI** and **MongoDB** (
    ```bash
    uvicorn main:app --reload
    ```
+
+## Vault Integration
+
+The application can retrieve the MongoDB connection string securely from **HashiCorp Vault**.
+
+### Configuration
+
+The following environment variables (typically passed via K8s ConfigMap/Secrets) enable Vault integration:
+
+- `VAULT_ADDR`: The address of your Vault server (e.g., `https://vault.example.com`).
+- `VAULT_TOKEN`: A valid Vault token for authentication.
+- `VAULT_SECRET_PATH`: The path to the secret (e.g., `myapp/database`).
+
+The application expects a key named **`MONGO_URI`** inside the secret at the specified path.
+
+### Fallback
+
+If Vault configuration is missing, the application will fallback to:
+1. Environment variable `MONGO_URI`.
+2. Environment variable `MONGODB_URL`.
+3. Local default: `mongodb://localhost:27017/testdb`.
 
 ## Usage
 
