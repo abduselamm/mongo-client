@@ -11,7 +11,7 @@ pipeline {
     environment {
         TELEGRAM_TOKEN = credentials('TELEGRAM_TOKEN')
         TELEGRAM_CHAT_ID = credentials('TELEGRAM_CHAT_ID')
-        SERVICE_NAME = "news"
+        SERVICE_NAME = "mongo-client"
         FILE_PATH = "scripts/docker-compose.yml"
         DOCKER_FILE_PATH = "scripts/Dockerfile"
         ENV_FILE_PATH = "./env"
@@ -43,28 +43,28 @@ pipeline {
                     // Determine environment based on branch
                     if (env.BRANCH_NAME == 'staging') {
                         env.ENV_TYPE = 'STG'
-                        env.IMAGE_NAME = 'news-stg'
+                        env.IMAGE_NAME = 'mongo-client-stg'
                         env.SSH_KEY = 'STG_SSH_KEY'
                     } 
                     else if (env.BRANCH_NAME == 'prod') {
                         env.ENV_TYPE = 'PROD'
-                        env.IMAGE_NAME = 'news-prod'
+                        env.IMAGE_NAME = 'mongo-client-prod'
                         env.SSH_KEY = 'PROD_SSH_KEY'
                     }
                     else if (env.BRANCH_NAME == 'qa') {
                         echo "QA branch detected"
                         env.ENV_TYPE = 'QA'
-                        env.IMAGE_NAME = 'news-qa'
+                        env.IMAGE_NAME = 'mongo-client-qa'
                         env.SSH_KEY = 'QA_SSH_KEY'
                     }
                     else if (env.BRANCH_NAME == 'dev') {
                         env.ENV_TYPE = 'DEV'
-                        env.IMAGE_NAME = 'news-dev'
+                        env.IMAGE_NAME = 'mongo-client-dev'
                         env.SSH_KEY = 'DEV_SSH_KEY'
                     }
                     else if (env.BRANCH_NAME == 'uat') {
                         env.ENV_TYPE = 'UAT'
-                        env.IMAGE_NAME = 'news-uat'
+                        env.IMAGE_NAME = 'mongo-client-uat'
                         env.SSH_KEY = 'UAT_SSH_KEY'
                     }
                     else {
