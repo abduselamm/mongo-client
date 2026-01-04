@@ -61,6 +61,16 @@ app.include_router(
     dependencies=[Depends(get_api_key)]
 )
 
+@app.on_event("startup")
+async def startup_db_client():
+    try:
+        # Ping the database to verify connectivity
+        from database import client
+        await client.admin.command('ping')
+        print(f"MongoDB: Connected successfully!")
+    except Exception as e:
+        print(f"MongoDB: Connection failed! Error: {e}")
+
 @app.get("/", tags=["Root"])
 async def read_root():
     return {

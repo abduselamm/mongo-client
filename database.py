@@ -14,17 +14,22 @@ def get_mongo_url():
     if vault_addr and vault_token and vault_path:
         try:
             client = hvac.Client(url=vault_addr, token=vault_token)
-            # Check if authenticated
             if client.is_authenticated():
-                # Assuming KV engine v2. adjust if v1 is used.
+                print(f"Vault: Authenticated successfully to {vault_addr}")
                 read_response = client.secrets.kv.v2.read_secret_version(path=vault_path)
                 secrets = read_response['data']['data']
                 if "MONGO_URI" in secrets:
+                    print(f"Vault: Reached secret path '{vault_path}' and retrieved MONGO_URI.")
                     return secrets["MONGO_URI"]
+                else:
+                    print(f"Vault: Reached secret path '{vault_path}' but 'MONGO_URI' key is missing!")
+            else:
+                print(f"Vault: Authentication failed for {vault_addr}")
         except Exception as e:
-            print(f"Error fetching secret from Vault: {e}")
+            print(f"Vault Error: {e}")
 
     # 2. Fallback to environment variable or local .env
+    print("Database: Using environment variable or local fallback for MongoDB URL.")
     return os.environ.get("MONGO_URI") or os.environ.get("MONGODB_URL") or "mongodb://localhost:27017/testdb"
 
 def get_api_key():
@@ -40,9 +45,12 @@ def get_api_key():
                 read_response = client.secrets.kv.v2.read_secret_version(path=vault_path)
                 secrets = read_response['data']['data']
                 if "API_KEY" in secrets:
+                    print(f"Vault: Retrieved API_KEY from path '{vault_path}'.")
                     return secrets["API_KEY"]
+                else:
+                    print(f"Vault: Key 'API_KEY' missing in path '{vault_path}'.")
         except Exception as e:
-            print(f"Error fetching API_KEY from Vault: {e}")
+            print(f"Vault API Key Error: {e}")
 
     # 2. Fallback to environment variable or local .env
     return os.environ.get("API_KEY")
