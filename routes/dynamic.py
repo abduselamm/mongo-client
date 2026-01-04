@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException, status, Response
 from typing import List, Dict, Any, Union
-from bson import ObjectId
+from bson import ObjectId, Decimal128
 from bson.errors import InvalidId
 from database import db
 
@@ -12,10 +12,17 @@ def get_id_filter(id: str) -> dict:
     except InvalidId:
         return {"_id": id}
 
-def map_document(document: Dict[str, Any]) -> Dict[str, Any]:
-    if document and "_id" in document:
-        document["_id"] = str(document["_id"])
-    return document
+def map_document(data: Any) -> Any:
+    """
+    Recursively convert BSON types (like ObjectId, Decimal128) to JSON-serializable types.
+    """
+    if isinstance(data, dict):
+        return {k: map_document(v) for k, v in data.items()}
+    if isinstance(data, list):
+        return [map_document(item) for item in data]
+    if isinstance(data, (ObjectId, Decimal128)):
+        return str(data)
+    return data
 
 from datetime import datetime
 
