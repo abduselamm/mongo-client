@@ -26,13 +26,20 @@ PREFIX = APP_ROOT_PATH.rstrip("/")
 if PREFIX and not PREFIX.startswith("/"):
     PREFIX = "/" + PREFIX
 
+# Log configuration on module load
+print(f"--- Configuration ---")
+print(f"MONGO_URI: {'[HIDDEN]' if MONGODB_URL else 'NOT SET'}")
+print(f"API_KEY: {'[SET]' if VALID_API_KEY else 'NOT SET'}")
+print(f"APP_ROOT_PATH: '{APP_ROOT_PATH}'")
+print(f"Computed PREFIX: '{PREFIX}'")
+print(f"---------------------")
+
 app = FastAPI(
     title="Mongo Client API",
-    # root_path handles proxy stripping, but for non-stripping proxies we also prefix routes
-    root_path=PREFIX, 
-    openapi_url="/openapi.json", # These are relative to root_path internally
-    docs_url="/docs",
-    redoc_url="/redoc",
+    # We use explicit prefixes for documentation to ensure it works even if root_path logic fails
+    openapi_url=f"{PREFIX}/openapi.json" if PREFIX else "/openapi.json",
+    docs_url=f"{PREFIX}/docs" if PREFIX else "/docs",
+    redoc_url=f"{PREFIX}/redoc" if PREFIX else "/redoc",
     description="""
 A generic RESTful API using FastAPI and MongoDB.
 
@@ -45,15 +52,19 @@ A generic RESTful API using FastAPI and MongoDB.
     version="1.0.0"
 )
 
-# Use include_router with the prefix as well to ensure routes catch the full path
+# Use include_router with the prefix to ensure routes catch the full path
+# if the proxy hits the full path but doesn't strip it.
 app.include_router(
     dynamic_router, 
-    prefix="", # Routes in dynamic.py are already dynamic, prefix set at app level if needed
+    prefix=PREFIX, 
     tags=["dynamic"], 
     dependencies=[Depends(get_api_key)]
 )
 
-# For root path, we might need a redirect or alias if the proxy hits the full path
 @app.get("/", tags=["Root"])
 async def read_root():
-    return {"message": "Welcome to the Mongo Client API!", "root_path": PREFIX}
+    return {
+        "message": "Welcome to the Mongo Client API!", 
+        "root_path": PREFIX,
+        "docs": f"{PREFIX}/docs" if PREFIX else "/docs"
+    }
