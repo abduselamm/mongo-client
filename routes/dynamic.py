@@ -70,6 +70,13 @@ def parse_extended_json(data: Any) -> Any:
     
     return data
 
+@router.get("/collections", response_description="List all collections", summary="List Collections", response_model=List[str])
+async def list_collections():
+    """
+    Retrieve a list of all collection names in the current database.
+    """
+    return await db.list_collection_names()
+
 @router.post("/{collection_name}/", response_description="Add new document(s)", summary="Create document(s) dynamically", response_model=Union[Dict[str, Any], List[Dict[str, Any]]])
 async def create_document(collection_name: str, document: Union[Dict[str, Any], List[Dict[str, Any]]] = Body(...)):
     """
