@@ -55,6 +55,20 @@ A generic RESTful API using FastAPI and MongoDB.
     version="1.0.0"
 )
 
+# CORS Configuration
+from fastapi.middleware.cors import CORSMiddleware
+origins = [
+    "http://localhost:5173",  # Vite default
+    "http://127.0.0.1:5173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Use include_router with the prefix to ensure routes catch the full path
 # if the proxy hits the full path but doesn't strip it.
 app.include_router(
