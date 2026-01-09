@@ -60,6 +60,7 @@ from fastapi.middleware.cors import CORSMiddleware
 origins = [
     "http://localhost:5173",  # Vite default
     "http://127.0.0.1:5173",
+    "https://mongo-client-ui.vercel.app"
 ]
 app.add_middleware(
     CORSMiddleware,
