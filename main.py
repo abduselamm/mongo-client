@@ -9,7 +9,6 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 async def get_api_key(api_key_header: str = Security(api_key_header)):
     # Debug logging
     incoming_key = api_key_header if api_key_header else "MISSING"
-    # Show only first 3 chars of valid key for security
     expected_prefix = str(VALID_API_KEY)[:3] + "..." if VALID_API_KEY else "NONE"
     
     if VALID_API_KEY is None:
@@ -70,7 +69,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Use include_router with the prefix to ensure routes catch the full path
 # if the proxy hits the full path but doesn't strip it.
 app.include_router(
     dynamic_router, 

@@ -14,8 +14,6 @@ def get_mongo_db_name(vault_secrets=None):
     # 2. Fallback to environmental variables
     return os.environ.get("MONGODB_DATABASE") or os.environ.get("MONGO_DB") or "testdb"
 
-# We should probably fetch all secrets at once to be efficient, 
-# but for now let's just ensure we get the DB name.
 
 def get_all_secrets():
     """Fetches all secrets from Vault once and returns them as a dict."""
@@ -73,8 +71,7 @@ def resolve_db_name(secrets):
 
 # 4. Root Path
 def resolve_root_path(secrets):
-    # Hardcoded as requested by user
-    return "/api/v1/cbesuperapp/mongo-client"
+    return "/api/v1/mongo-client"
 
 MONGODB_URL = resolve_mongo_url(VAULT_SECRETS)
 VALID_API_KEY = resolve_api_key(VAULT_SECRETS)
