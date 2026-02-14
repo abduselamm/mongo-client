@@ -106,9 +106,9 @@ async def create_document(collection_name: str, document: Union[Dict[str, Any], 
 @router.get("/{collection_name}/", response_description="List all documents", summary="List documents", response_model=List[Dict[str, Any]])
 async def list_documents(collection_name: str):
     """
-    Retrieve a list of all documents in the collection (capped at 1000).
+    Retrieve a list of all documents in the collection (capped at 2000).
     """
-    documents = await db[collection_name].find().to_list(1000)
+    documents = await db[collection_name].find().to_list(2000)
     return [map_document(doc) for doc in documents]
 
 @router.get("/{collection_name}/{id}", response_description="Get a single document", summary="Get document by ID", response_model=Dict[str, Any])
