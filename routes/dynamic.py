@@ -8,7 +8,7 @@ router = APIRouter()
 
 def get_id_filter(id: str) -> dict:
     try:
-        return {"_id": ObjectId(id)}
+        return {"_id": {"$in": [ObjectId(id), id]}}
     except InvalidId:
         return {"_id": id}
 
