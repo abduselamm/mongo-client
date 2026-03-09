@@ -157,6 +157,17 @@ async def delete_document(collection_name: str, id: str):
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
+
+
+@router.delete("/{collection_name}/documents", response_description="Delete all documents", summary="Delete All Documents")
+async def delete_all_documents(collection_name: str):
+    """
+    Delete all documents in the collection. The collection itself is preserved.
+    """
+    result = await db[collection_name].delete_many({})
+    return {"deleted_count": result.deleted_count}
+
+
 @router.delete("/{collection_name}", response_description="Delete an entire collection", summary="Drop Collection")
 async def drop_collection(collection_name: str):
     """
