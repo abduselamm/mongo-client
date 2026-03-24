@@ -27,6 +27,8 @@ def map_document(document: Dict[str, Any]) -> Dict[str, Any]:
             elif iso_str.endswith('+00:00'):
                 iso_str = iso_str[:-6] + 'Z'
             return {"$date": iso_str}
+        elif isinstance(val, ObjectId):
+            return {"$oid": str(val)}
         return val
 
     if not document:
@@ -34,7 +36,10 @@ def map_document(document: Dict[str, Any]) -> Dict[str, Any]:
         
     mapped = _map_types(document)
     if "_id" in mapped:
-        mapped["_id"] = str(mapped["_id"])
+        if isinstance(mapped["_id"], dict) and "$oid" in mapped["_id"]:
+            mapped["_id"] = mapped["_id"]["$oid"]
+        else:
+            mapped["_id"] = str(mapped["_id"])
     return mapped
 
 def parse_extended_json(data: Any) -> Any:
