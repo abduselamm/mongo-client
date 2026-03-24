@@ -1,30 +1,41 @@
 from fastapi import APIRouter, Body, HTTPException, status, Response
 from typing import List, Dict, Any, Union
-from bson import ObjectId, Decimal128
+from bson import ObjectId
 from bson.errors import InvalidId
 from database import db
 
 router = APIRouter()
 
+from datetime import datetime
+
 def get_id_filter(id: str) -> dict:
     try:
-        return {"_id": {"$in": [ObjectId(id), id]}}
+        return {"_id": ObjectId(id)}
     except InvalidId:
         return {"_id": id}
 
-def map_document(data: Any) -> Any:
-    """
-    Recursively convert BSON types (like ObjectId, Decimal128) to JSON-serializable types.
-    """
-    if isinstance(data, dict):
-        return {k: map_document(v) for k, v in data.items()}
-    if isinstance(data, list):
-        return [map_document(item) for item in data]
-    if isinstance(data, (ObjectId, Decimal128)):
-        return str(data)
-    return data
+def map_document(document: Dict[str, Any]) -> Dict[str, Any]:
+    def _map_types(val: Any) -> Any:
+        if isinstance(val, dict):
+            return {k: _map_types(v) for k, v in val.items()}
+        elif isinstance(val, list):
+            return [_map_types(item) for item in val]
+        elif isinstance(val, datetime):
+            iso_str = val.isoformat(timespec='milliseconds')
+            if val.tzinfo is None:
+                iso_str += 'Z'
+            elif iso_str.endswith('+00:00'):
+                iso_str = iso_str[:-6] + 'Z'
+            return {"$date": iso_str}
+        return val
 
-from datetime import datetime
+    if not document:
+        return document
+        
+    mapped = _map_types(document)
+    if "_id" in mapped:
+        mapped["_id"] = str(mapped["_id"])
+    return mapped
 
 def parse_extended_json(data: Any) -> Any:
     """
@@ -70,13 +81,6 @@ def parse_extended_json(data: Any) -> Any:
     
     return data
 
-@router.get("/collections", response_description="List all collections", summary="List Collections", response_model=List[str])
-async def list_collections():
-    """
-    Retrieve a list of all collection names in the current database.
-    """
-    return await db.list_collection_names()
-
 @router.post("/{collection_name}/", response_description="Add new document(s)", summary="Create document(s) dynamically", response_model=Union[Dict[str, Any], List[Dict[str, Any]]])
 async def create_document(collection_name: str, document: Union[Dict[str, Any], List[Dict[str, Any]]] = Body(...)):
     """
@@ -106,9 +110,9 @@ async def create_document(collection_name: str, document: Union[Dict[str, Any], 
 @router.get("/{collection_name}/", response_description="List all documents", summary="List documents", response_model=List[Dict[str, Any]])
 async def list_documents(collection_name: str):
     """
-    Retrieve a list of all documents in the collection (capped at 2000).
+    Retrieve a list of all documents in the collection (capped at 1000).
     """
-    documents = await db[collection_name].find().to_list(2000)
+    documents = await db[collection_name].find().to_list(1000)
     return [map_document(doc) for doc in documents]
 
 @router.get("/{collection_name}/{id}", response_description="Get a single document", summary="Get document by ID", response_model=Dict[str, Any])
@@ -131,12 +135,13 @@ async def update_document(collection_name: str, id: str, document: Dict[str, Any
     filter_query = get_id_filter(id)
     
     # Exclude _id from update payload
-    #test1
     if "_id" in document:
         del document["_id"]
 
-    if len(document) >= 1:
-        update_result = await db[collection_name].update_one(filter_query, {"$set": document})
+    parsed_document = parse_extended_json(document)
+
+    if len(parsed_document) >= 1:
+        update_result = await db[collection_name].update_one(filter_query, {"$set": parsed_document})
         if update_result.matched_count == 0:
              raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
 
@@ -157,22 +162,3 @@ async def delete_document(collection_name: str, id: str):
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
-
-
-@router.delete("/{collection_name}/documents", response_description="Delete all documents", summary="Delete All Documents")
-async def delete_all_documents(collection_name: str):
-    """
-    Delete all documents in the collection. The collection itself is preserved.
-    """
-    result = await db[collection_name].delete_many({})
-    return {"deleted_count": result.deleted_count}
-
-
-@router.delete("/{collection_name}", response_description="Delete an entire collection", summary="Drop Collection")
-async def drop_collection(collection_name: str):
-    """
-    Drop an entire collection from the database.
-    **WARNING**: This operation is irreversible and deletes all data in the collection.
-    """
-    await db[collection_name].drop()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
