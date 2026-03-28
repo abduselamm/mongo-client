@@ -86,7 +86,7 @@ def parse_extended_json(data: Any) -> Any:
     
     return data
 
-@router.get("/collections/", response_description="List all collections", summary="List collections", response_model=List[str])
+@router.get("/_sys/collections", response_description="List all collections", summary="List collections", response_model=List[str])
 async def list_collections():
     """
     Retrieve a list of all existing collection names in the current database.
@@ -162,6 +162,22 @@ async def update_document(collection_name: str, id: str, document: Dict[str, Any
         return map_document(doc)
     
     raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
+
+@router.delete("/{collection_name}/", response_description="Delete a collection", summary="Delete collection")
+async def delete_collection(collection_name: str):
+    """
+    Drop a collection from the database.
+    """
+    await db[collection_name].drop()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.delete("/{collection_name}/documents", response_description="Delete all documents", summary="Delete all documents")
+async def delete_all_documents(collection_name: str):
+    """
+    Delete all documents in a collection without dropping the collection itself.
+    """
+    delete_result = await db[collection_name].delete_many({})
+    return {"deleted_count": delete_result.deleted_count}
 
 @router.delete("/{collection_name}/{id}", response_description="Delete a document", summary="Delete document")
 async def delete_document(collection_name: str, id: str):
