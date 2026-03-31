@@ -121,11 +121,16 @@ async def create_document(collection_name: str, document: Union[Dict[str, Any], 
     return map_document(created_doc)
 
 @router.get("/{collection_name}/", response_description="List all documents", summary="List documents", response_model=List[Dict[str, Any]])
-async def list_documents(collection_name: str):
+async def list_documents(collection_name: str, skip: int = 0, limit: int = 0):
     """
-    Retrieve a list of all documents in the collection (capped at 1000).
+    Retrieve documents in the collection.
+    - skip: number of documents to skip (for pagination)
+    - limit: max documents to return; 0 means no limit (return all)
     """
-    documents = await db[collection_name].find().to_list(1000)
+    cursor = db[collection_name].find().skip(skip)
+    if limit > 0:
+        cursor = cursor.limit(limit)
+    documents = await cursor.to_list(length=None)
     return [map_document(doc) for doc in documents]
 
 @router.get("/{collection_name}/{id}", response_description="Get a single document", summary="Get document by ID", response_model=Dict[str, Any])
