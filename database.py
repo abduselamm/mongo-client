@@ -57,10 +57,11 @@ def resolve_mongo_url(secrets):
 
 # 2. API Key
 def resolve_api_key(secrets):
-    if "API_KEY" in secrets:
-        print(f"Vault: Found API_KEY in secret.")
-        return secrets["API_KEY"]
-    return os.environ.get("API_KEY")
+    for key in ["MONGO_API_KEY", "API_KEY"]:
+        if key in secrets:
+            print(f"Vault: Found {key} in secret.")
+            return secrets[key]
+    return os.environ.get("MONGO_API_KEY") or os.environ.get("API_KEY")
 
 # 3. DB Name
 def resolve_db_name(secrets):
