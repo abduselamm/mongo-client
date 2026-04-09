@@ -14,6 +14,15 @@ def get_id_filter(id: str) -> dict:
     except InvalidId:
         return {"_id": id}
 
+def get_id_filters(id: str) -> list:
+    """Return all plausible filter variants for a given id string."""
+    filters = [{"_id": id}]  # string match always included
+    try:
+        filters.insert(0, {"_id": ObjectId(id)})  # prefer ObjectId
+    except InvalidId:
+        pass
+    return filters
+
 def map_document(document: Dict[str, Any]) -> Dict[str, Any]:
     def _map_types(val: Any) -> Any:
         if isinstance(val, dict):
@@ -139,33 +148,45 @@ async def show_document(collection_name: str, id: str):
     Retrieve a specific document by its unique ID.
     Try to match ObjectId, falls back to string ID.
     """
-    filter_query = get_id_filter(id)
-    if (doc := await db[collection_name].find_one(filter_query)) is not None:
-        return map_document(doc)
+    for filter_query in get_id_filters(id):
+        if (doc := await db[collection_name].find_one(filter_query)) is not None:
+            return map_document(doc)
     raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
 
 @router.patch("/{collection_name}/{id}", response_description="Update a document", summary="Update document", response_model=Dict[str, Any])
 async def update_document(collection_name: str, id: str, document: Dict[str, Any] = Body(...)):
     """
     Update an existing document by its ID.
-    Accepts partial updates.
+    Accepts partial updates. Tries ObjectId and string _id variants so documents
+    are found regardless of how the _id was stored.
     """
-    filter_query = get_id_filter(id)
-    
     # Exclude _id from update payload
     if "_id" in document:
         del document["_id"]
 
     parsed_document = parse_extended_json(document)
 
+    matched_filter = None
     if len(parsed_document) >= 1:
-        update_result = await db[collection_name].update_one(filter_query, {"$set": parsed_document})
-        if update_result.matched_count == 0:
-             raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
+        for filter_query in get_id_filters(id):
+            update_result = await db[collection_name].update_one(filter_query, {"$set": parsed_document})
+            if update_result.matched_count > 0:
+                matched_filter = filter_query
+                break
+        if matched_filter is None:
+            raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
+    else:
+        # Nothing to update — just resolve the filter used for returning the doc
+        for filter_query in get_id_filters(id):
+            if await db[collection_name].count_documents(filter_query, limit=1):
+                matched_filter = filter_query
+                break
+        if matched_filter is None:
+            raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
 
-    if (doc := await db[collection_name].find_one(filter_query)) is not None:
+    if (doc := await db[collection_name].find_one(matched_filter)) is not None:
         return map_document(doc)
-    
+
     raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
 
 @router.delete("/{collection_name}/", response_description="Delete a collection", summary="Delete collection")
@@ -189,10 +210,9 @@ async def delete_document(collection_name: str, id: str):
     """
     Remove a document from the collection by its ID.
     """
-    filter_query = get_id_filter(id)
-    delete_result = await db[collection_name].delete_one(filter_query)
-
-    if delete_result.deleted_count == 1:
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    for filter_query in get_id_filters(id):
+        delete_result = await db[collection_name].delete_one(filter_query)
+        if delete_result.deleted_count == 1:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     raise HTTPException(status_code=404, detail=f"Document {id} not found in {collection_name}")
