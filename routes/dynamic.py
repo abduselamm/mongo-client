@@ -142,6 +142,19 @@ async def list_documents(collection_name: str, skip: int = 0, limit: int = 0):
     documents = await cursor.to_list(length=None)
     return [map_document(doc) for doc in documents]
 
+@router.post("/{collection_name}/query", response_description="Run filter query", summary="Run a query against a collection", response_model=List[Dict[str, Any]])
+async def run_query(collection_name: str, query: Dict[str, Any] = Body(...)):
+    """
+    Run a MongoDB filter query against the specified collection and return matching documents.
+    Accepts extended JSON filters and converts them.
+    Limited to 1000 items to prevent massive result payloads payload.
+    """
+    parsed_query = parse_extended_json(query)
+    cursor = db[collection_name].find(parsed_query)
+    documents = await cursor.to_list(length=1000)
+    return [map_document(doc) for doc in documents]
+
+
 @router.get("/{collection_name}/{id}", response_description="Get a single document", summary="Get document by ID", response_model=Dict[str, Any])
 async def show_document(collection_name: str, id: str):
     """
